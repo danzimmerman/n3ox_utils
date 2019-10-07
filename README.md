@@ -19,7 +19,6 @@ This is a personal package of Python utilities for antennas and transmission lin
 This is a GUI wire entry tool using [`ipywidgets`](https://ipywidgets.readthedocs.io/en/latest/)
 
 Wire coordinates and segmentation are entered manually, and calling the WireInput's `return_wire_dicts()` method returns a list of dicts that
-can be unpacked into PyNEC's `PyNEC.c_geometry.wire()` method. 
-
+can be unpacked into PyNEC's `PyNEC.c_geometry.wire` method. 
 
  ![WireInput Screenshot showing GUI wire input interface](/docimages/WireInput_Screenshot.png?raw=true)
