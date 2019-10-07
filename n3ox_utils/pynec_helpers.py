@@ -52,6 +52,9 @@ class WireInput(object):
     # --- Interface buttons --- 
     self.wirebutton = ipywidgets.Button(description = 'Add Wire')
     self.wirebutton.on_click(self.on_add_wire)
+    self.delbutton = ipywidgets.Button(description = 'Delete All')
+    self.delbutton.on_click(self.on_del_all)
+
     self.taperbutton = ipywidgets.ToggleButton(description = 'Show Taper Params', 
                                                value = False) #will be enabled after some wires are added
     
@@ -90,7 +93,13 @@ class WireInput(object):
     
     self.refresh()
       
-  
+  def on_del_all(self, button):
+      '''
+      Deletes all the wires. No return, no safeties!
+      '''
+      self.wires = []
+      self.refresh()
+
   def add_wire_row(self):
     '''
     Adds a wire input row to the GUI.
