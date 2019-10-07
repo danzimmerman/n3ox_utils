@@ -9,3 +9,5 @@ This is a personal package of Python utilities for antennas and transmission lin
  [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC) NEC-2++ simulations.
  
  * `tlcalc`: Lossy transmission line calculations.
+
+ * `pynec_helpers`: Wire input GUI and other helper utilities for working with [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC)
