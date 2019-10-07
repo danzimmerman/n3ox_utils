@@ -12,6 +12,9 @@ This is a personal package of Python utilities for antennas and transmission lin
 
  * `pynec_helpers`: Wire input GUI and other helper utilities for working with [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC)
 
- ## `pynec_helpers` 
+ ## PyNEC Helpers
 
- ![WireInput Screenshot showing GUI wire input interface](./WireInput_Screenshot.png)
+ ### Wire Input Widget
+
+This is a GUI wire entry tool using [`ipywidgets`]
+ ![WireInput Screenshot showing GUI wire input interface](/docimages/WireInput_Screenshot.png?raw=true)
