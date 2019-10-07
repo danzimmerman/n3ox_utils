@@ -144,7 +144,10 @@ class WireInput(object):
       
       elif c.argid == 'rad': #default to one mm
         c.value = 0.001
-      
+
+      elif c.argid in ['rdel', 'rrad']:
+        c.value = 1.0
+
       else:
         c.value = 0.000
         
@@ -171,7 +174,7 @@ class WireInput(object):
       self.headercells[n].layout.visibility = setval
       for wire in self.wires:
         wire.children[n].layout.visibility = setval
-        wire.children[n].value = 0.0
+        wire.children[n].value = 1.0 #default for rrad and rdel is 1.0
 
     self.refresh()
 
