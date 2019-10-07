@@ -98,6 +98,7 @@ class WireInput(object):
       Deletes all the wires. No return, no safeties!
       '''
       self.wires = []
+      self.nwires = 0
       self.refresh()
 
   def add_wire_row(self):
