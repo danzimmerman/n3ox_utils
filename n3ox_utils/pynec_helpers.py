@@ -25,8 +25,8 @@ class WireInput(object):
     # --- PyNEC/NEC-2 wire geometry arguments and labels ---
     
     self.wireargs = ['tag_id', 'segment_count', 'xw1','yw1','zw1', 'xw2', 'yw2', 'zw2', 'rad', 'rdel', 'rrad']
-    self.cells = ['delbutton'] + self.wireargs
-    self.wire_units = ['','','']+['(m)']*9
+    self.cellnames = ['delbutton'] + self.wireargs
+    self.wire_units = ['','']+['(m)']*9
     self.wire_cellwidths = ['4%']*2+['8%']*7+['6%']*2
     
     # --- GUI layout and styling ---
@@ -83,7 +83,7 @@ class WireInput(object):
     self.wires.pop(button.tag_id-1)
     self.nwires -= 1
     for n, wire in enumerate(self.wires):
-      tagix = self.cells.index('tag_id')
+      tagix = self.cellnames.index('tag_id')
       
       wire.children[tagix].value = str(n+1)
       wire.children[0].tag_id = n+1
@@ -101,7 +101,10 @@ class WireInput(object):
            else ipywidgets.FloatText(layout = clay, step=None)
            for n, clay in enumerate(self.wire_cell_layouts)] 
     
-    # --- add a wire delete button ---
+    for widget, wirearg in zip(row, self.wireargs):
+      widget.argid = wirearg
+    
+    # --- add a wire delete button at the beginning of the row ---
     del_lay = ipywidgets.Layout(width = '2%', border = '1px solid black')
     delbutton = ipywidgets.Button(description = 'X', 
                                   layout = del_lay,
@@ -109,24 +112,27 @@ class WireInput(object):
                                   font_weight = 'bold')
     delbutton.tag_id = tag_id
     delbutton.on_click(self.on_del_wire)
+    delbutton.argid = None
     row = [delbutton] + row
     
     # --- fill in default values for new wires ---
     
     for n, c in enumerate(row):
-      _ = c
-      if n == self.cells.index('tag_id'):
-        row[n].value = tag_id
-        row[n].disabled = True #don't allow change in tag_id
-      elif n == self.cells.index('segment_count'): # segment number
+      if c.argid == 'tag_id':
+        c.value = tag_id
+        c.disabled = True #tag_id is read-only and handled by the GUI
+      
+      elif c.argid == 'segment_count': # default to previous wire's segments, or 5 if no previous wire
         try:
-          row[n].value = self.wires[-1].children[n].value
+          c.value = self.wires[-1].children[n].value
         except:
-          row[n].value = str(5)
-      elif n == self.cells.index('rad'):
-        row[n].value = 0.001
+          c.value = 5
+      
+      elif c.argid == 'rad': #default to one mm
+        c.value = 0.001
+      
       else:
-        row[n].value = 0.000
+        c.value = 0.000
         
     
     
@@ -134,7 +140,10 @@ class WireInput(object):
   
   def taperbutton_handler(self, change):
     '''
-    
+    Handles the wire taper togle button.
+
+    TODO: Consider properly handling the change dictionaries that the button emits
+    instead of checking its current value.
     '''
     #print(change)
 
@@ -142,13 +151,14 @@ class WireInput(object):
       setval = 'visible'
     else:
       setval = 'hidden'
-    for n in [10, 11]:
+    
+    for colname in ['rdel', 'rrad']:
+      n = self.cellnames.index(colname)
       self.headercells[n].layout.visibility = setval
       for wire in self.wires:
         wire.children[n].layout.visibility = setval
         wire.children[n].value = 0.0
 
-   
     self.refresh()
 
   def refresh(self):
@@ -164,13 +174,17 @@ class WireInput(object):
     '''
     Initialize and display the collection of widgets.
     '''
-    #self.frame.close()
+
     self.frame.children = [self.controls, self.header] + self.wires
-    #self.frame.open()
-      
-    for wire in self.wires:
-      wire.children[10].layout.visibility = 'hidden' 
-      wire.children[11].layout.visibility = 'hidden' 
+          
+    
+    for colname in ['rdel','rrad']:
+      n = self.cellnames.index(colname)
+      self.headercells[n].layout.visibility = 'hidden'
+      for wire in self.wires:
+        wire.children[n].layout.visibility = 'hidden' 
+        wire.children[n].layout.visibility = 'hidden' 
+    
     self.out = display(self.frame, display_id = True)
 
   def return_wire_dicts(self):
@@ -181,7 +195,7 @@ class WireInput(object):
     '''
     wiredicts = []
     for wire in self.wires:
-      wiredict = {arg:child.value for arg, child in zip(self.cells, wire.children) if not arg == 'delbutton'}
+      wiredict = {child.argid : child.value for child in wire.children if child.argid}
       wiredicts.append(wiredict)
     
     return wiredicts
