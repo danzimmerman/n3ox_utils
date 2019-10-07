@@ -15,7 +15,7 @@ def read_desc(fname):
 
 setup(
     name = 'n3ox-utils',
-    version = '0.2.1',
+    version = '0.2.2',
     author = 'Daniel S. Zimmerman, N3OX',
     author_email = 'n3ox@n3ox.net',
     description = ('Antenna and transmission line '

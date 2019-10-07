@@ -64,8 +64,8 @@ class WireInput(object):
                                  layout = self.frame_layout) #the "frame" is a collection of rows
     self.nwires = 0
     self.add_wire_row()
-    self.show()
-    #self.controls.children[0] =self.wirebutton)
+    #self.show() # this doesn't always work, so let's make it manual for now
+    
 
     
   def on_add_wire(self, button):
