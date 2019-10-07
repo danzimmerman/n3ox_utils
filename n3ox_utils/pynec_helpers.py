@@ -27,7 +27,7 @@ class WireInput(object):
     self.wireargs = ['tag_id', 'segment_count', 'xw1','yw1','zw1', 'xw2', 'yw2', 'zw2', 'rad', 'rdel', 'rrad']
     self.cellnames = ['delbutton'] + self.wireargs
     self.wire_units = ['','']+['(m)']*9
-    self.wire_cellwidths = ['4%']*2+['8%']*7+['6%']*2
+    self.wire_cellwidths = ['5%']*2+['8%']*9
     
     # --- GUI layout and styling ---
     self.frame_layout = ipywidgets.Layout(width = '100%')
