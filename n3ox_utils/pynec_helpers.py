@@ -50,7 +50,8 @@ class WireInput(object):
     self.header = ipywidgets.HBox(self.headercells, layout = self.hb_layout)
     
     # --- Interface buttons --- 
-    self.wirebutton = ipywidgets.Button(description = 'Add Wire')
+    self.wirebutton = ipywidgets.Button(description = 'Add Wire', 
+                                        button_style = 'primary')
     self.wirebutton.on_click(self.on_add_wire)
 
     self.delbutton = ipywidgets.Button(description = 'Delete All', 
@@ -58,7 +59,8 @@ class WireInput(object):
     self.delbutton.on_click(self.on_del_all)
 
     self.taperbutton = ipywidgets.ToggleButton(description = 'Show Taper Params', 
-                                               value = False) #will be enabled after some wires are added
+                                               value = False,
+                                               button_style = 'primary') 
     
     self.taperbutton.observe(self.taperbutton_handler)
     self.wires = []
