@@ -61,7 +61,7 @@ class WireInput(object):
     self.taperbutton.observe(self.taperbutton_handler)
     self.wires = []
     
-    self.controls = ipywidgets.HBox([self.wirebutton, self.taperbutton], 
+    self.controls = ipywidgets.HBox([self.wirebutton, self.delbutton, self.taperbutton], 
                                     layout = self.hb_layout)
     self.frame = ipywidgets.VBox([self.controls], 
                                  layout = self.frame_layout) #the "frame" is a collection of rows
