@@ -5,6 +5,7 @@ This module is a collection of PyNEC helper utilities.
 '''
 import ipywidgets
 from IPython.display import display
+import urllib
 
 class WireInput(object):
   '''
@@ -24,10 +25,11 @@ class WireInput(object):
     
     # --- PyNEC/NEC-2 wire geometry arguments and labels ---
     
+    self.out = None
     self.wireargs = ['tag_id', 'segment_count', 'xw1','yw1','zw1', 'xw2', 'yw2', 'zw2', 'rad', 'rdel', 'rrad']
     self.cellnames = ['delbutton'] + self.wireargs
     self.wire_units = ['','']+['(m)']*9
-    self.wire_cellwidths = ['5%']*2+['8%']*9
+    self.wire_cellwidths = ['5%']*2+['10%']*6+['8%']*3
     
     # --- GUI layout and styling ---
     self.frame_layout = ipywidgets.Layout(width = '100%')
@@ -74,7 +76,72 @@ class WireInput(object):
     #self.show() # this doesn't always work, so let's make it manual for now
     
 
+  def import_EZNEC_wires_from_URL(self, ezurl):
+    '''
+    Uses urllib to open a wire description output from EZNEC.
+
+    Parses the units line and converts to meters.
+    ''' 
+    # --- check the file for units line and select number of header lines ---
+
+    with urllib.request.urlopen(ezurl) as urf:
+      bytesdata = urf.readlines()
+
+    desc = [line.decode('UTF-8') for line in bytesdata]
+    self.EZNEC_import = desc
+    EZNEC_in_line = [line.count('EZNEC') for line in desc]
+    NH = EZNEC_in_line.index(True)+8
+    if not NH == 8:
+      raise NotImplementedError('Found units line {0} as first line. Not yet implemented.'.format(desc[0]))
     
+    pipesepdata = ['|'.join(line.split()).replace(',|',',') for line in desc[NH:]]
+    wiredata = []
+
+    for entry in pipesepdata:
+      wd = [d.split(',') for d in entry.split('|') if not d.count('W')]
+      wdu = []
+      for wdl in wd: # unpack the wire coordinates into individual entries
+          wdu.extend(wdl)
+      wiredata.append(wdu)
+
+    wdmap = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2', 'yw2', 'zw2', 'rad', 'segment_count', 'dielc', 'dielthk']
+    xformers = [int]+[float]*6 + [lambda num: float(num)/2000]+[int, float, lambda num: float(num)/1000]
+    wiredicts = []
+    for entry in wiredata:
+      dc = {key:xformer(num) for key, xformer, num in zip(wdmap, xformers, entry)}
+      wiredicts.append(dc)
+    
+    self.EZNEC_wires = wiredicts
+    self.delete_all_wires()
+    for wdc in self.EZNEC_wires:
+      row = self.add_wire_row()
+      self.populate_row(row = row, 
+                        wiredict = wdc)
+                      
+    if self.out:
+      self.refresh() #refresh if .show() has been called, otherwise don't refresh
+      
+  def populate_row(self, row = None, wiredict = None):
+    '''
+    Iterates through children of a wire row returned from add_wire_row() and 
+    fills in appropriate values from a dict of wires.
+    
+    Matches keys so extraneous keys (Dielectric properties from EZNEC, for example) are ignored.
+
+    Note that the "row" is a list of widgets, but isn't contained in the row's HBox
+    '''
+    for k, v in wiredict.items():
+      for box in row:
+        if box.argid == k:
+          box.value = v
+
+  def delete_all_wires(self):
+    '''
+    Sets the wire list to an empty list and self.nwires to 0
+    '''
+    self.wires = []
+    self.nwires = 0
+
   def on_add_wire(self, button):
     '''
     Callback for the "Add Wire" button.
@@ -101,8 +168,7 @@ class WireInput(object):
       '''
       Deletes all the wires. No return, no safeties!
       '''
-      self.wires = []
-      self.nwires = 0
+      self.delete_all_wires()
       self.refresh()
 
   def add_wire_row(self):
@@ -154,6 +220,7 @@ class WireInput(object):
     
     
     self.wires.append(ipywidgets.HBox(row, layout = self.hb_layout))
+    return row
   
   def taperbutton_handler(self, change):
     '''
