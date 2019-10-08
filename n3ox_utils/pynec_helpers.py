@@ -104,11 +104,12 @@ class WireInput(object):
           wdu.extend(wdl)
       wiredata.append(wdu)
 
-    wdmap = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2', 'yw2', 'zw2', 'rad', 'segment_count', 'dielc', 'dielthk']
-    xformers = [int]+[float]*6 + [lambda num: float(num)/2000]+[int, float, lambda num: float(num)/1000]
+    self.EZNEC_entry_map = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2', 'yw2', 'zw2', 'rad', 'segment_count', 'dielc', 'dielthk']
+    # --- TODO: change transformers based on wire units --- probably make a dict of transformers
+    self.EZNEC_xformers = [int]+[float]*6 + [lambda num: float(num)/2000]+[int, float, lambda num: float(num)/1000]
     wiredicts = []
     for entry in wiredata:
-      dc = {key:xformer(num) for key, xformer, num in zip(wdmap, xformers, entry)}
+      dc = {key:xformer(num) for key, xformer, num in zip(self.EZNEC_entry_map, self.EZNEC_xformers, entry)}
       wiredicts.append(dc)
     
     self.EZNEC_wires = wiredicts
