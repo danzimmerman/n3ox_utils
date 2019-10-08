@@ -53,16 +53,20 @@ class WireInput(object):
     
     # --- Interface buttons --- 
     self.wirebutton = ipywidgets.Button(description = 'Add Wire', 
-                                        button_style = 'primary')
+                                        button_style = 'info',
+                                        tooltip = 'Add a new row.')
     self.wirebutton.on_click(self.on_add_wire)
 
     self.delbutton = ipywidgets.Button(description = 'Delete All', 
-                                       button_style = 'danger')
+                                       button_style = 'danger',
+                                       tooltip = 'CAUTION! No confirmations!')
+    
     self.delbutton.on_click(self.on_del_all)
 
     self.taperbutton = ipywidgets.ToggleButton(description = 'Show Taper Params', 
                                                value = False,
-                                               button_style = 'primary') 
+                                               button_style = 'info',
+                                               tooltip = 'Show/hide tapered wire rdel and rrad.') 
     
     self.taperbutton.observe(self.taperbutton_handler)
     self.wires = []
