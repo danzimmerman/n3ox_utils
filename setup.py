@@ -15,7 +15,7 @@ def read_desc(fname):
 
 setup(
     name = 'n3ox-utils',
-    version = '0.2.3',
+    version = '0.2.4',
     author = 'Daniel S. Zimmerman, N3OX',
     author_email = 'n3ox@n3ox.net',
     description = ('Antenna and transmission line '
@@ -25,7 +25,6 @@ setup(
                 'n3ox_utils',
                ],
     install_requires = [
-                        'PyNEC',
                         'numpy',
                         'matplotlib',
                         'cycler',
