@@ -51,10 +51,8 @@ class WireInput(object):
                                                         self.wire_cell_layouts)]
 
         # --- Use some shortened names for headers ---
-        self.headercells[1].value = self.headercells[1].value.replace(
-            'tag_', '')
-        self.headercells[2].value = self.headercells[2].value.replace(
-            'segment_count', 'segs')
+        self.headercells[1].value = self.headercells[1].value.replace('tag_', '')
+        self.headercells[2].value = self.headercells[2].value.replace('segment_count', 'segs')
 
         self.header = ipywidgets.HBox(self.headercells, layout=self.hb_layout)
 
@@ -105,37 +103,37 @@ class WireInput(object):
             raise NotImplementedError(
                 'Found units line {0} as first line. Not yet implemented.'.format(desc[0]))
 
-        pipesepdata = ['|'.join(line.split()).replace(',|', ',')
+        pipesepdata = ['|'.join(line.split()).replace(',|', ',') #EZNEC files have mix of variable spacing and comma seperated, replace with pipes
                        for line in desc[NH:]]
         wiredata = []
-
+        # --- The wire coordinates are still comma separated, split those up too ---
         for entry in pipesepdata:
-            wd = [d.split(',') for d in entry.split('|') if not d.count('W')] #drop wire connectivity like W1E2, etc
-            wdu = []
-            for wdl in wd:  # unpack the wire coordinates into individual entries
-                wdu.extend(wdl)
-            wiredata.append(wdu)
+            wire_line_temp = [d.split(',') for d in entry.split('|') if not d.count('W')] #drop wire connectivity like W1E2, etc
+            wire_entry_unpacked = []
+            for wdlist in wire_line_temp:  # unpack the wire coordinates and other data into individual entries in wdlist
+                wire_entry_unpacked.extend(wdlist)
+            wiredata.append(wire_entry_unpacked)
 
         self.EZNEC_entry_map = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2',
                                 'yw2', 'zw2', 'rad', 'segment_count', 'dielc', 'dielthk']
-        # --- TODO: change transformers based on wire units --- probably make a dict of transformers
+        # --- TODO: change transformers based on wire units --- probably make a dict of transformers ---
         self.EZNEC_xformers = [int]+[float]*6 + [lambda num: float(num)/2000]
         self.EZNEC_xformers += [int, float, lambda num: float(num)/1000]
         
-        # --- Use transformations to build a wire dictionary from EZNEC input data
+        # --- Use transformations to build a wire dictionary from EZNEC input data ---
         wiredicts = []
-        for entry in wiredata:
-            dc = {key: xformer(num) for key, xformer, num in 
-                  zip(self.EZNEC_entry_map, self.EZNEC_xformers, entry)}
-            wiredicts.append(dc)
+        for wire_entry in wiredata: #wiredata is a list of lists, one per wire
+            wiredict = {key: xformer(value) for key, xformer, value in 
+                        zip(self.EZNEC_entry_map, self.EZNEC_xformers, wire_entry)}
+            wiredicts.append(wiredict)
 
         self.EZNEC_wires = wiredicts
         # --- Delete existing wires and add new wires with imported data ---
         self.delete_all_wires()
-        for wdc in self.EZNEC_wires:
+        for wiredict in self.EZNEC_wires:
             row = self.add_wire_row()
             self.populate_row(row=row,
-                              wiredict=wdc)
+                              wiredict=wiredict)
 
         if self.out:
             self.refresh()  # refresh if .show() has been called, otherwise don't refresh
@@ -219,7 +217,7 @@ class WireInput(object):
         for n, c in enumerate(row):
             if c.argid == 'tag_id':
                 c.value = tag_id
-                c.disabled = True  # tag_id is read-only and handled by the GUI
+                c.disabled = True  # tag_id is read-only and handled in the background
 
             elif c.argid == 'segment_count':  # default to previous wire's segments, or 5 if no previous wire
                 try:

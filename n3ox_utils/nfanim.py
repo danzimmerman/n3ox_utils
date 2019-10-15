@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import PyNEC
@@ -7,21 +7,23 @@ import matplotlib.pyplot as mplt
 import n3ox_utils.plot_tools as pltools
 import colorcet as cc
 
+
 class CartesianFieldAnimation(object):
     '''
     Class to generate animated movies of one period of a complex
     amplitude field defined on a cartesian grid.
     '''
+
     def __init__(self, X, Y, fieldamp,
                  nframes, pyplot_plt=None, scalefunc=None):
         '''
         Initializes an animation object with 
-        
+
          X, Y: Cartesian coordinates as from np.meshgrid()
-         
+
          fieldamp: Complex amplitude field from PyNEC
                   simulation.
-         
+
          nframes: Number of phase frames to compute.
 
          pyplot_plt: optional, configured matplotlib.pyplot instance
@@ -31,11 +33,11 @@ class CartesianFieldAnimation(object):
          scalefunc: optional, function to scale the real part of the field.
 
         '''
-        # --- default to unscaled --- 
+        # --- default to unscaled ---
         if scalefunc:
             self.scalefunc = scalefunc
         else:
-            self.scalefunc = lambda x: x 
+            self.scalefunc = lambda x: x
 
         self.X = X
         self.Y = Y
@@ -45,13 +47,12 @@ class CartesianFieldAnimation(object):
         self.Ff = self.A[:, :, np.newaxis]*np.exp(-1j*self.phase)
         self.sCf = self.scalefunc(self.Ff.real/np.max(np.abs(self.Ff)))
         self.clims = [np.min(self.sCf), np.max(self.sCf)]
-        
-        if not pyplot_plt: 
+
+        if not pyplot_plt:
             self.plt = mplt
             pltools.init_pyplot_defaults(self.plt)
         else:
             self.plt = pyplot_plt
-        
 
     def plot_preview_frames(self, framelist=None, **pcolor_options):
         '''
@@ -70,14 +71,14 @@ class CartesianFieldAnimation(object):
 
          Otherwise, a colormap from https://colorcet.pyviz.org/
          matching colorcet_cmap_name will be used, defaulting to 'bky'.
-         
+
         '''
-        
+
         if not 'cmap' in pcolor_options.keys():
             print(f'Using colorcet cmap "bky"')
             pcolor_options.update({'cmap': cc.cm['bky']})
         else:
-            
+
             cmname = pcolor_options['cmap']
             try:
                 pcolor_options.update({'cmap': cc.cm[cmname]})
@@ -96,28 +97,24 @@ class CartesianFieldAnimation(object):
         height = Ysize/Xsize * width
 
         # --- initialize a gridspec figure using n3ox_utils.plot_tools ---
-        fig = pltools.init_gridspec_fig(self.plt, 
-                                        nrows = nrows, 
-                                        ncols = ncols,
-                                        figsize = (width, height))
-        # --- plot frames --- 
+        fig = pltools.init_gridspec_fig(self.plt,
+                                        nrows=nrows,
+                                        ncols=ncols,
+                                        figsize=(width, height))
+        # --- plot frames ---
         for fnum, ax in zip(framelist, fig.axes):
-            p = ax.pcolor(self.X, self.Y, 
+            p = ax.pcolor(self.X, self.Y,
                           self.sCf[:, :, fnum],
                           **pcolor_options)
             ax.axis('equal')
             ax.axis('off')
             p.set_clim(self.clims)
-        
+
         return fig
-    
+
     def save_anim(self, nframes):
         '''
 
         '''
         print('save_anim() not implemented yet')
         pass
-
-   
-
-
