@@ -100,8 +100,8 @@ class WireInput(object):
         EZNEC_in_line = [line.count('EZNEC') for line in desc]
         NH = EZNEC_in_line.index(True)+8
         if not NH == 8:
-            raise NotImplementedError(
-                'Found units line {0} as first line. Not yet implemented.'.format(desc[0]))
+            uestr = 'Found units line {0} as first line. Not yet implemented.'
+            raise NotImplementedError(uestr.format(desc[0]))
 
         pipesepdata = ['|'.join(line.split()).replace(',|', ',') #EZNEC files have mix of variable spacing and comma seperated, replace with pipes
                        for line in desc[NH:]]
@@ -115,7 +115,8 @@ class WireInput(object):
             wiredata.append(wire_entry_unpacked)
 
         self.EZNEC_entry_map = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2',
-                                'yw2', 'zw2', 'rad', 'segment_count', 'dielc', 'dielthk']
+                                'yw2', 'zw2', 'rad', 'segment_count', 
+                                'dielc', 'dielthk']
         # --- TODO: change transformers based on wire units --- probably make a dict of transformers ---
         self.EZNEC_xformers = [int]+[float]*6 + [lambda num: float(num)/2000]
         self.EZNEC_xformers += [int, float, lambda num: float(num)/1000]
@@ -140,12 +141,14 @@ class WireInput(object):
 
     def populate_row(self, row=None, wiredict=None):
         '''
-        Iterates through children of a wire row returned from add_wire_row() and 
-        fills in appropriate values from a dict of wires.
+        Iterates through children of a wire row returned from add_wire_row() 
+        and fills in appropriate values from a dict of wires.
 
-        Matches keys so extraneous keys (Dielectric properties from EZNEC, for example) are ignored.
+        Matches keys so extraneous keys (Dielectric properties from EZNEC, 
+        for example) are ignored.
 
-        Note that the "row" is a list of widgets, but isn't contained in the row's HBox
+        Note that the "row" is a list of widgets, 
+        but isn't contained in the row's HBox
         '''
         for k, v in wiredict.items():
             for box in row:
@@ -219,7 +222,7 @@ class WireInput(object):
                 c.value = tag_id
                 c.disabled = True  # tag_id is read-only and handled in the background
 
-            elif c.argid == 'segment_count':  # default to previous wire's segments, or 5 if no previous wire
+            elif c.argid == 'segment_count':  # default to previous wire's segmentation, or 5 if no previous wire
                 try:
                     c.value = self.wires[-1].children[n].value
                 except:
@@ -241,8 +244,8 @@ class WireInput(object):
         '''
         Handles the wire taper togle button.
 
-        TODO: Consider properly handling the change dictionaries that the button emits
-        instead of checking its current value.
+        TODO: Consider properly handling the change dictionaries that the button
+        emits instead of checking its current value.
         '''
         # print(change)
 
@@ -288,13 +291,13 @@ class WireInput(object):
     def return_wire_dicts(self):
         '''
         Return the current wire params as a list of dicts
-        suitable for ** splatting into PyNEC wire geometry's 
+        suitable for ** unpacking into PyNEC wire geometry's 
         add_wire()
         '''
         wiredicts = []
         for wire in self.wires:
-            wiredict = {
-                child.argid: child.value for child in wire.children if child.argid}
+            wiredict = {child.argid: child.value 
+                        for child in wire.children if child.argid}
             wiredicts.append(wiredict)
 
         return wiredicts
