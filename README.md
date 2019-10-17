@@ -2,13 +2,17 @@
 
 ## N3OX Python Utilities
 
-This is a personal package of Python utilities for antennas and transmission lines by N3OX.
+This is a personal package of Python utilities for antennas and transmission lines by N3OX. Work in progress.
 
 ## Contents
  * `nfanim`: Near-field animations using 
  [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC) NEC-2++ simulations.
  
- * `tlcalc`: Lossy transmission line calculations.
+ * `tlcalc`: Lossy transmission line calculations. 
+ Implements the same transmission line calculations as [Owen Duffy's Transmission Line Calculator](https://owenduffy.net/transmissionline/concept/mptl.htm) for use in Jupyter notebooks and other Python scripts.
+
+ * `plot_tools`
+ General matplotlib pyplot setup and antenna pattern plotting in ARRL style.
 
  * `pynec_helpers`: Wire input GUI and other helper utilities for working with [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC)
 

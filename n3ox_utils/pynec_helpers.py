@@ -1,5 +1,25 @@
 # -*- coding: utf-8 -*-
 
+# Copyright (c) 2019 Daniel S. Zimmerman, N3OX
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy 
+# of this software and associated documentation files (the "Software"), to deal 
+# in the Software without restriction, including without limitation the rights to 
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
+# the Software, and to permit persons to whom the Software is furnished to do so, 
+# subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all 
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+# DEALINGS IN THE SOFTWARE.
+
 '''
 This module is a collection of PyNEC helper utilities. 
 '''
@@ -179,8 +199,8 @@ class WireInput(object):
         for n, wire in enumerate(self.wires):
             tagix = self.cellnames.index('tag_id')
 
-            wire.children[tagix].value = str(n+1)
-            wire.children[0].tag_id = n+1
+            wire.children[tagix].value = str(n+1) #1-indexed
+            wire.children[0].tag_id = n+1 #this is the wire delete button
 
         self.refresh()
 
@@ -242,7 +262,7 @@ class WireInput(object):
 
     def taperbutton_handler(self, change):
         '''
-        Handles the wire taper togle button.
+        Handles the wire taper toggle button.
 
         TODO: Consider properly handling the change dictionaries that the button
         emits instead of checking its current value.
