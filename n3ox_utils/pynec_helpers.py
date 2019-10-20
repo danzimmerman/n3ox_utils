@@ -2,30 +2,101 @@
 
 # Copyright (c) 2019 Daniel S. Zimmerman, N3OX
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy 
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights to 
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of 
-# the Software, and to permit persons to whom the Software is furnished to do so, 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
 # subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all 
+# The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
-# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
 '''
-This module is a collection of PyNEC helper utilities. 
+This module is a collection of PyNEC helper utilities, mostly to provide a 
+named-variable interface to the most common PyNEC things I use.
 '''
 import ipywidgets
 from IPython.display import display
 import urllib
+
+
+def pack_gn_card_args(gn_card_params):
+    '''
+    Takes a dictionary of named parameters and returns
+    a list of arguments for the .gn_card() method of
+    a PyNEC NEC context.
+
+    See http://tmolteno.github.io/necpp/classnec__context.html#a124bb06c25d9aa47305ae75b53becb59
+
+    ground_type: 
+      perfect, free_space, real_SN, or real_refl
+
+      for perfectly conducting, free space, Sommerfeld/Norton 
+      or finite reflection-coefficient ground types.
+
+    rad_wire_count:
+      Number of radials in the ground screen approx, or
+      none for no ground screen
+
+    epsilon:
+      relative dielectric constant
+
+    sigma:
+      conductivity in mhos/meter
+
+    Additional parameters for different radial/cliff scenarios:
+
+    if rad_wire_count > 0:
+      screen_radius: radial screen R in meters
+      screen_wire_radius: radial wire radius, meterss
+
+    if rad_wire_count == 0:
+     cliff_boundary_distance: radial or linear distance for 
+       two-medium cliff breakpoint (radial or positive X distance)
+     
+     cliff_drop_distance: 
+       distance of medium 2 surface below medium 1
+     
+     medium_two_epsilon, 
+     medium_two_sigma:
+       dielectric constant and conductivity of the 
+       second medium at the bottom of the cliff
+
+       RP card specifies whether the cliff geometry is circular or linear
+    '''
+    gpr = gn_card_params
+    args = [0]*8
+    gt = {'perfect': 1, 'free_space': -1,
+          'real_SN': 2, 'real_refl': 0}
+
+    args[0] = gt[gpr['ground_type']]  # I1 ground_type
+    args[1] = gpr['rad_wire_count']  # I2 rad_wire_count
+    args[2] = gpr['epsilon']  # F1 tmp1
+    args[3] = gpr['sigma']  # F2 tmp2
+
+    if gpr['rad_wire_count'] > 0:
+        args[4] = gpr['screen_radius'] # F3 tmp3
+        args[5] = gpr['screen_wire_radius'] #F4 tmp4
+
+    if 'cliff_boundary_distance' in gpr.keys():
+        if gpr['rad_wire_count'] > 0:
+            raise UserWarning(
+                'rad_wire_count>0 but cliff_distance is specified! Set rad_wire_count to zero for two-medium cliff.')
+        args[4] = gpr['medium_two_epsilon'] #F3 tmp3
+        args[5] = gpr['medium_two_sigma'] #F4 tmp4
+        args[6] = gpr['cliff_boundary_distance'] #F5 tmp5
+        args[7] = gpr['cliff_drop_distance'] #F6 tmp6
+
+    return args
 
 
 class WireInput(object):
@@ -71,8 +142,10 @@ class WireInput(object):
                                                         self.wire_cell_layouts)]
 
         # --- Use some shortened names for headers ---
-        self.headercells[1].value = self.headercells[1].value.replace('tag_', '')
-        self.headercells[2].value = self.headercells[2].value.replace('segment_count', 'segs')
+        self.headercells[1].value = self.headercells[1].value.replace(
+            'tag_', '')
+        self.headercells[2].value = self.headercells[2].value.replace(
+            'segment_count', 'segs')
 
         self.header = ipywidgets.HBox(self.headercells, layout=self.hb_layout)
 
@@ -123,28 +196,30 @@ class WireInput(object):
             uestr = 'Found units line {0} as first line. Not yet implemented.'
             raise NotImplementedError(uestr.format(desc[0]))
 
-        pipesepdata = ['|'.join(line.split()).replace(',|', ',') #EZNEC files have mix of variable spacing and comma seperated, replace with pipes
+        pipesepdata = ['|'.join(line.split()).replace(',|', ',')  # EZNEC files have mix of variable spacing and comma seperated, replace with pipes
                        for line in desc[NH:]]
         wiredata = []
         # --- The wire coordinates are still comma separated, split those up too ---
         for entry in pipesepdata:
-            wire_line_temp = [d.split(',') for d in entry.split('|') if not d.count('W')] #drop wire connectivity like W1E2, etc
+            # drop wire connectivity like W1E2, etc
+            wire_line_temp = [d.split(',')
+                              for d in entry.split('|') if not d.count('W')]
             wire_entry_unpacked = []
             for wdlist in wire_line_temp:  # unpack the wire coordinates and other data into individual entries in wdlist
                 wire_entry_unpacked.extend(wdlist)
             wiredata.append(wire_entry_unpacked)
 
         self.EZNEC_entry_map = ['tag_id', 'xw1', 'yw1', 'zw1', 'xw2',
-                                'yw2', 'zw2', 'rad', 'segment_count', 
+                                'yw2', 'zw2', 'rad', 'segment_count',
                                 'dielc', 'dielthk']
         # --- TODO: change transformers based on wire units --- probably make a dict of transformers ---
         self.EZNEC_xformers = [int]+[float]*6 + [lambda num: float(num)/2000]
         self.EZNEC_xformers += [int, float, lambda num: float(num)/1000]
-        
+
         # --- Use transformations to build a wire dictionary from EZNEC input data ---
         wiredicts = []
-        for wire_entry in wiredata: #wiredata is a list of lists, one per wire
-            wiredict = {key: xformer(value) for key, xformer, value in 
+        for wire_entry in wiredata:  # wiredata is a list of lists, one per wire
+            wiredict = {key: xformer(value) for key, xformer, value in
                         zip(self.EZNEC_entry_map, self.EZNEC_xformers, wire_entry)}
             wiredicts.append(wiredict)
 
@@ -199,8 +274,8 @@ class WireInput(object):
         for n, wire in enumerate(self.wires):
             tagix = self.cellnames.index('tag_id')
 
-            wire.children[tagix].value = str(n+1) #1-indexed
-            wire.children[0].tag_id = n+1 #this is the wire delete button
+            wire.children[tagix].value = str(n+1)  # 1-indexed
+            wire.children[0].tag_id = n+1  # this is the wire delete button
 
         self.refresh()
 
@@ -316,7 +391,7 @@ class WireInput(object):
         '''
         wiredicts = []
         for wire in self.wires:
-            wiredict = {child.argid: child.value 
+            wiredict = {child.argid: child.value
                         for child in wire.children if child.argid}
             wiredicts.append(wiredict)
 
