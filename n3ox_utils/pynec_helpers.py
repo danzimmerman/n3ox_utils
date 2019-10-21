@@ -20,6 +20,14 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+# NEC-2 Card/Code References
+
+# Here are some references I'm consulting while working with PyNEC. I haven't done NEC decks before, only EZNEC, so I'm learning as I go.
+# http://www.antentop.org/w4rnl.001/necdeck.html
+# https://www.nec2.org/part_3/cards/
+# http://tmolteno.github.io/necpp/classnec__context.html#pub-methods
+# http://tmolteno.github.io/necpp/libnecpp_8h.html
+
 '''
 This module is a collection of PyNEC helper utilities, mostly to provide a 
 named-variable interface to the most common PyNEC things I use.
