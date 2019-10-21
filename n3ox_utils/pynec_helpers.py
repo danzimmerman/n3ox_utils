@@ -187,7 +187,7 @@ def pack_gn_card_args(**kwargs):
                 'Valid args: {1}')
         evals0 = ', '.join(illegal_kwargs)
         evals1 = ', '.join(all_valid_kwargs)
-        raise UserWarning(invargstr.format(evals0, evals1))
+        raise UserWarning(emsg.format(evals0, evals1))
 
     # --- Check for basic arguments ---
     missing_args = [arg for arg in basic_kwargs
