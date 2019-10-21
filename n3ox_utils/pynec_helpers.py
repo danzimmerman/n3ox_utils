@@ -29,13 +29,96 @@ from IPython.display import display
 import urllib
 
 
-def pack_gn_card_args(gn_card_params):
+def pack_ex_card_args(**kwargs):
     '''
-    Takes a dictionary of named parameters and returns
+    Takes named excitation parameters as keyword args and returns
+    an ordered list of arguments for the .ex_card() method of 
+    a PyNEC NEC context.
+
+    See http://tmolteno.github.io/necpp/classnec__context.html#ae3bc2cfa92d14dfa02028ca88fbfad19
+    and https://www.nec2.org/part_3/cards/ex.html
+
+    Common arguments to all excitation types:
+
+    excitation_type:
+      voltage
+      linear_wave
+      r_circ_wave
+      l_circ_wave
+      current
+      voltage_disc (current-slope-discontinuity voltage source)
+
+    Arguments for voltage or voltage_disc (category A):
+
+    source_tag: 
+      integer tag for the excited wire
+    source_seg: 
+      integer tag for the excited segment on the wire
+    ereal:
+      real part of the voltage
+    eimag:
+      imaginary part of the voltage
+
+    Wave and current excitations (category B & C) not yet implemented.
+
+    '''
+    # --- dict of integer flags ---
+    exints = {'voltage': 0, 'linear_wave': 1,
+              'r_circ_wave': 2, 'l_circ_wave': 3,
+              'current': 4, 'voltage_disc': 5}
+
+    volt_exs = [key for key in exints.keys() if key.count('voltage')]
+    wave_exs = [key for key in exints.keys() if key.count('wave')]
+    curr_exs = [key for key in exints.keys() if key.count('current')]
+
+    # --- Check for invalid arguments ---
+    # TODO: collect all valid keys and throw errors if any are missing
+
+    excat = None  # category A, B, C to harmonize with PyNEC and NEC-2 docs
+    extype = kwargs['excitation_type']
+    if extype in volt_exs:
+        excat = 'A'
+    elif extype in wave_exs:
+        excat = 'B'
+    elif extype in curr_exs:
+        excat = 'C'
+    else:
+        emsg = ('Invalid excitation_type {0}. '
+                'Supply one of {1}')
+        evals0 = extype
+        evals1 = ', '.join(exints.keys())
+        raise UserWarning(emsg.format(evals0, evals1))
+
+    # --- Pack and return the argument list ---
+    args = [0]*10  # might need to be 11 if all are working
+    if excat == 'A':
+        args[0] = exints[extype]  # I1
+        args[1] = kwargs['source_tag']  # I2
+        args[2] = kwargs['source_seg']  # I3
+        args[3] = 0  # I4 Admit/Imped print, skip
+        args[4] = kwargs['ereal']  # F1
+        args[5] = kwargs['eimag']  # F2
+        args[6] = 0  # F3 normalization for I4
+        # F4-F7 remaining three args are zero for voltage sources
+
+    else:
+        emsg = ('Excitation categories B and C not '
+                'yet implemented (Excitation types {0})')
+        evals0 = ', '.join(wave_exs + curr_exs)
+        raise NotImplementedError(emsg.format(evals0))
+
+    return args
+
+
+def pack_gn_card_args(**kwargs):
+    '''
+    Takes named ground plane parameters as keyword args and returns
     a list of arguments for the .gn_card() method of
     a PyNEC NEC context.
 
     See http://tmolteno.github.io/necpp/classnec__context.html#a124bb06c25d9aa47305ae75b53becb59
+
+    Common arguments to all ground types: 
 
     ground_type: 
       perfect, free_space, real_SN, or real_refl
@@ -45,7 +128,7 @@ def pack_gn_card_args(gn_card_params):
 
     rad_wire_count:
       Number of radials in the ground screen approx, or
-      none for no ground screen
+      0 for no ground screen.
 
     epsilon:
       relative dielectric constant
@@ -53,7 +136,7 @@ def pack_gn_card_args(gn_card_params):
     sigma:
       conductivity in mhos/meter
 
-    Additional parameters for different radial/cliff scenarios:
+    Additional arguments for different radial/cliff scenarios:
 
     if rad_wire_count > 0:
       screen_radius: radial screen R in meters
@@ -62,10 +145,10 @@ def pack_gn_card_args(gn_card_params):
     if rad_wire_count == 0:
      cliff_boundary_distance: radial or linear distance for 
        two-medium cliff breakpoint (radial or positive X distance)
-     
+
      cliff_drop_distance: 
        distance of medium 2 surface below medium 1
-     
+
      medium_two_epsilon, 
      medium_two_sigma:
        dielectric constant and conductivity of the 
@@ -73,28 +156,68 @@ def pack_gn_card_args(gn_card_params):
 
        RP card specifies whether the cliff geometry is circular or linear
     '''
-    gpr = gn_card_params
+
     args = [0]*8
     gt = {'perfect': 1, 'free_space': -1,
           'real_SN': 2, 'real_refl': 0}
 
-    args[0] = gt[gpr['ground_type']]  # I1 ground_type
-    args[1] = gpr['rad_wire_count']  # I2 rad_wire_count
-    args[2] = gpr['epsilon']  # F1 tmp1
-    args[3] = gpr['sigma']  # F2 tmp2
+    basic_kwargs = ['ground_type', 'rad_wire_count',
+                    'epsilon', 'sigma']
+    radial_kwargs = ['screen_radius',
+                     'screen_wire_radius']
+    cliff_kwargs = ['medium_two_epsilon', 'medium_two_sigma',
+                    'cliff_boundary_distance', 'cliff_drop_distance']
 
-    if gpr['rad_wire_count'] > 0:
-        args[4] = gpr['screen_radius'] # F3 tmp3
-        args[5] = gpr['screen_wire_radius'] #F4 tmp4
+    all_valid_kwargs = basic_kwargs + radial_kwargs + cliff_kwargs
 
-    if 'cliff_boundary_distance' in gpr.keys():
-        if gpr['rad_wire_count'] > 0:
+    # --- Check for invalid/illegal keyword arguments ----
+    illegal_kwargs = [arg for arg in kwargs.keys() if not
+                      arg in all_valid_kwargs]
+
+    if len(illegal_kwargs) > 0:
+        emsg = ('Invalid argument(s) {0}. '
+                'Valid args: {1}')
+        evals0 = ', '.join(illegal_kwargs)
+        evals1 = ', '.join(all_valid_kwargs)
+        raise UserWarning(invargstr.format(evals0, evals1))
+
+    # --- Check for basic arguments ---
+    missing_args = [arg for arg in basic_kwargs
+                    if not arg in kwargs.keys()]
+    if len(missing_args) > 0:
+        emsg = ('Arguments {0} are required for all ground types, '
+                'but {1} were missing. See documentation.')
+        evals0 = ', '.join(basic_kwargs)
+        evals1 = ', '.join(missing_args)
+        raise UserWarning(emsg.format(evals0, evals1))
+
+    # --- Check directly for valid ground type ---
+
+    if not kwargs['ground_type'] in gt.keys():
+        emsg = ('Invalid ground_type {0}. '
+                'Supply one of {1}')
+        evals0 = kwargs['ground_type']
+        evals1 = ', '.join(gt.keys())
+        raise UserWarning(emsg.format(evals0, evals1))
+    # TODO: more validity checking
+
+    args[0] = gt[kwargs['ground_type']]  # I1 ground_type
+    args[1] = kwargs['rad_wire_count']  # I2 rad_wire_count
+    args[2] = kwargs['epsilon']  # F1 tmp1
+    args[3] = kwargs['sigma']  # F2 tmp2
+
+    if kwargs['rad_wire_count'] > 0:
+        args[4] = kwargs['screen_radius']  # F3 tmp3
+        args[5] = kwargs['screen_wire_radius']  # F4 tmp4
+
+    if 'cliff_boundary_distance' in kwargs.keys():
+        if kwargs['rad_wire_count'] > 0:
             raise UserWarning(
                 'rad_wire_count>0 but cliff_distance is specified! Set rad_wire_count to zero for two-medium cliff.')
-        args[4] = gpr['medium_two_epsilon'] #F3 tmp3
-        args[5] = gpr['medium_two_sigma'] #F4 tmp4
-        args[6] = gpr['cliff_boundary_distance'] #F5 tmp5
-        args[7] = gpr['cliff_drop_distance'] #F6 tmp6
+        args[4] = kwargs['medium_two_epsilon']  # F3 tmp3
+        args[5] = kwargs['medium_two_sigma']  # F4 tmp4
+        args[6] = kwargs['cliff_boundary_distance']  # F5 tmp5
+        args[7] = kwargs['cliff_drop_distance']  # F6 tmp6
 
     return args
 
