@@ -1,25 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2019 Daniel S. Zimmerman, N3OX
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights to
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-
 # NEC-2 Card/Code References
 
 # Here are some references I'm consulting while working with PyNEC. I haven't done NEC decks before, only EZNEC, so I'm learning as I go.
@@ -254,8 +234,8 @@ class WireInput(object):
                          'zw1', 'xw2', 'yw2', 'zw2', 'rad', 'rdel', 'rrad']
         self.cellnames = ['delbutton'] + self.wireargs
         self.wire_units = ['', '']+['(m)']*9
-        self.wire_cellwidths = ['5%']*2+['10%']*6+['8%']*3
-
+        self.wire_cellwidths = ['5%']*2+['9.5%']*6+['7.5%']*3
+        self.boxlayout = ipywidgets.Layout(width='8%')
         # --- GUI layout and styling ---
         self.frame_layout = ipywidgets.Layout(width='100%')
         self.hb_layout = ipywidgets.Layout()
@@ -292,16 +272,33 @@ class WireInput(object):
 
         self.delbutton.on_click(self.on_del_all)
 
-        self.taperbutton = ipywidgets.ToggleButton(description='Show Taper Params',
+        self.taperbutton = ipywidgets.ToggleButton(description='Taper Params',
                                                    value=False,
                                                    button_style='info',
                                                    tooltip='Show/hide tapered wire rdel and rrad.')
 
         self.taperbutton.observe(self.taperbutton_handler)
+        self.translatebutton = ipywidgets.Button(description='Translate Wires',
+                                                 button_style='info',
+                                                 tooltip='Select x, y, z and fill in magnitude.')
+
+        self.translatebutton.on_click(self.on_translate_wires)
+        self.translate_direction_selector = ipywidgets.ToggleButtons(options=['x', 'y', 'z'],
+                                                                     value='z',
+                                                                     button_style='info',
+                                                                     )
+        self.translate_direction_selector.style.button_width = '10%'
+        self.translate_direction_selector.style.font_weight = 'bold'
+        self.translation_amount_box = ipywidgets.FloatText(value=0.0,
+                                                           tooltip='Translation amount.',
+                                                           layout=self.boxlayout)
         self.wires = []
 
-        self.controls = ipywidgets.HBox([self.wirebutton, self.delbutton, self.taperbutton],
+        self.controls = ipywidgets.HBox([self.wirebutton, self.delbutton,
+                                         self.taperbutton, self.translatebutton,
+                                         self.translation_amount_box, self.translate_direction_selector],
                                         layout=self.hb_layout)
+
         self.frame = ipywidgets.VBox([self.controls],
                                      layout=self.frame_layout)  # the "frame" is a collection of rows
         self.nwires = 0
@@ -416,6 +413,26 @@ class WireInput(object):
         '''
         self.delete_all_wires()
         self.refresh()
+
+    def on_translate_wires(self, button):
+        '''
+        Translates all the wire coords in the GUI according to direction
+        and amount in interface.
+        '''
+        amount = self.translation_amount_box.value
+        dir = self.translate_direction_selector.value
+        self.translate_wires(amount, dir)
+
+    def translate_wires(self, amount, direction):
+        '''
+        External function to translate wires
+        '''
+        #print(amount, directison)
+        tags = [direction+'w1', direction+'w2']
+        for wire in self.wires:
+            for child in wire.children:
+                if child.argid in tags:
+                    child.value += amount
 
     def add_wire_row(self):
         '''
