@@ -15,7 +15,7 @@ named-variable interface to the most common PyNEC things I use.
 import ipywidgets
 from IPython.display import display
 import urllib
-
+import numpy as np
 
 def pack_ex_card_args(**kwargs):
     '''
@@ -544,3 +544,72 @@ class WireInput(object):
             wiredicts.append(wiredict)
 
         return wiredicts
+
+# === Below we collect some functions for manipulating the geometry of wire dictionaries. ===
+def rotate_wiredict(wd, thetadeg, axis, inplace=False):
+    """
+    Rotates a dictionary wd with points
+    xw1, yw1, zw1 and xw2, yw2, zw2 
+    about the specified axis 'x', 'y', or 'z'
+    through an angle thetadeg in degrees.
+    
+    If inplace is set to False, a copy is returned.
+    
+    https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
+    """
+    theta = np.pi/180.0*thetadeg
+    if axis == 'x':
+        R = np.array([[1, 0, 0],
+                      [0, np.cos(theta), -np.sin(theta)],
+                      [0, np.sin(theta), np.cos(theta)]])
+    elif axis == 'y':
+        R = np.array([[np.cos(theta), 0, np.sin(theta)],
+                      [0, 1, 0],
+                      [-np.sin(theta), 0, np.cos(theta)]])
+    elif axis == 'z':
+        R = np.array([[np.cos(theta), -np.sin(theta), 0],
+                      [np.sin(theta), np.cos(theta), 0],
+                      [0, 0, 1]])
+    
+    if not inplace:
+        wd = wd.copy()
+    
+    p1 = (wd['xw1'], wd['yw1'], wd['zw1'])
+    p2 = (wd['xw2'], wd['yw2'], wd['zw2'])
+    
+    wd['xw1'], wd['yw1'], wd['zw1'] = R@p1 #@ is Python 3 shortcut for np.matmul()
+    wd['xw2'], wd['yw2'], wd['zw2'] = R@p2 
+    return wd
+
+def translate_wiredict(wd, amount, axis, inplace=False):
+    """
+    Translates a dictionary wd with points
+    xw1, yw1, zw1 and xw2, yw2, zw2 
+    a distance 'amount' along the specified axis 'x', 'y', or 'z'
+    """
+    if not inplace:
+        wd = wd.copy()
+    
+    if axis == 'x':
+        wd['xw1'] += amount
+        wd['xw2'] += amount
+    elif axis == 'y':
+        wd['yw1'] += amount
+        wd['yw2'] += amount
+    elif axis == 'z':
+        wd['zw1'] += amount
+        wd['zw2'] += amount
+    
+    return wd
+
+def get_wire_points(wd):
+    """
+    Returns 
+    p1 = (xw1, yw1, zw1)
+    p2 = (xw2, yw2, zw2)
+    
+    from a wire dictionary
+    """
+    p1 = np.asarray([wd['xw1'], wd['yw1'], wd['zw1']])
+    p2 = np.asarray([wd['xw2'], wd['yw2'], wd['zw2']])
+    return p1, p2

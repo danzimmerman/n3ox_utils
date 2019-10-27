@@ -19,6 +19,8 @@ def init_pyplot_defaults(plt):
     '''
     Initializes defaults for 
     matplotlib.pyplot instance
+
+    Returns the instance so it can be used.
     '''
     color_cycle = cycler.cycler('color', plot_colors)
     plt.rcParams.update({'figure.figsize': (15.0, 9.0),
