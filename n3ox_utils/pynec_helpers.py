@@ -97,7 +97,6 @@ def pack_ex_card_args(**kwargs):
 
     return args
 
-
 def pack_gn_card_args(**kwargs):
     '''
     Takes named ground plane parameters as keyword args and returns
@@ -209,7 +208,32 @@ def pack_gn_card_args(**kwargs):
 
     return args
 
+def pack_ld_card_args(**kwargs):
+    '''
+    Takes named load parameters as keyword args and returns
+    a list of arguments for the .ld_card() method of
+    a PyNEC NEC context.
 
+    See http://tmolteno.github.io/necpp/classnec__context.html#a8e3690b43a90a9b947ffda3727732017
+
+    '''
+    args = [0]*7
+    load_types = {'none':-1, 
+                  'series_RLC_lump':0, 
+                  'parallel_RLC_lump':1,
+                  'series_distrib':2, 
+                  'parallel_distrib':3,
+                  'load_Z':4,
+                  'wire_conductivity':5}
+    ltstr = ', '.join(load_types.keys())
+    if not 'load_type' in kwargs.keys():
+        msg = f'Specify keyword load_type with a value from {ltstr}'
+        raise UserWarning(msg)
+    
+    if not kwargs['load_type'] in load_types:
+        msg = f'Invalid load_type. Specify one of {ltstr}'
+
+    #TODO: finish this
 class WireInput(object):
     '''
     A Jupyter notebook wire input GUI for PyNEC
