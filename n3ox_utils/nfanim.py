@@ -35,7 +35,7 @@ class CartesianFieldAnimation(object):
     '''
 
     def __init__(self, X, Y, fieldamp,
-                 nframes, pyplot_plt=None, scalefunc=None):
+                 nframes=100, pyplot_plt=None, scalefunc=None):
         '''
         Initializes an animation object with 
 

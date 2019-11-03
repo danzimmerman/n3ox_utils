@@ -17,6 +17,7 @@ from IPython.display import display
 import urllib
 import numpy as np
 
+
 def pack_ex_card_args(**kwargs):
     '''
     Takes named excitation parameters as keyword args and returns
@@ -96,6 +97,7 @@ def pack_ex_card_args(**kwargs):
         raise NotImplementedError(emsg.format(evals0))
 
     return args
+
 
 def pack_gn_card_args(**kwargs):
     '''
@@ -208,6 +210,7 @@ def pack_gn_card_args(**kwargs):
 
     return args
 
+
 def pack_ld_card_args(**kwargs):
     '''
     Takes named load parameters as keyword args and returns
@@ -216,24 +219,178 @@ def pack_ld_card_args(**kwargs):
 
     See http://tmolteno.github.io/necpp/classnec__context.html#a8e3690b43a90a9b947ffda3727732017
 
-    '''
-    args = [0]*7
-    load_types = {'none':-1, 
-                  'series_RLC_lump':0, 
-                  'parallel_RLC_lump':1,
-                  'series_distrib':2, 
-                  'parallel_distrib':3,
-                  'load_Z':4,
-                  'wire_conductivity':5}
-    ltstr = ', '.join(load_types.keys())
-    if not 'load_type' in kwargs.keys():
-        msg = f'Specify keyword load_type with a value from {ltstr}'
-        raise UserWarning(msg)
-    
-    if not kwargs['load_type'] in load_types:
-        msg = f'Invalid load_type. Specify one of {ltstr}'
 
-    #TODO: finish this
+    Required arguments for all load types include 
+    load_type:
+      none, series_RLC_lump, parallel_RLC_lump, 
+      series_dist, parallel_dist, load_Z,
+      wire_conductivity
+
+    load_tag: 
+      the wire to load
+
+    load_seg_start: 
+      the starting segment for the loading
+
+    load_seg_end: 
+      the ending segment for the loading
+
+    Other arguments depending on load type 
+    R, L, C : 
+      resistance, inductance, and capacitance 
+      for lumped loads 
+
+    R, X: 
+      resistance and reactance for load_Z
+
+    R_per_meter, L_per_meter, C_per_meter:
+      resistance, inductance, and capacitance per meter for
+      distributed loads
+
+    wire_sigma:
+      conductivity in mhos/meter for wire conductivity
+
+    If load_tag and Load_seg_start are zero, the load will
+    apply to all wires. 
+
+    If load_seg_start and load_seg_end are zero
+    with non-zero load_tag, the entire wire will be loaded.
+
+    '''
+    thisfunc = 'pack_ld_card_args()'
+    args = [0]*7
+    load_types = {'none': -1,
+                  'series_RLC_lump': 0,
+                  'parallel_RLC_lump': 1,
+                  'series_dist': 2,
+                  'parallel_dist': 3,
+                  'load_Z': 4,
+                  'wire_conductivity': 5}
+    ltstr = ', '.join(load_types.keys())
+
+    if not 'load_type' in kwargs.keys():
+        emsg = f'Specify keyword load_type with a value from {ltstr}'
+        raise UserWarning(emsg)
+
+    loadtype = kwargs['load_type']
+    if not loadtype in load_types:
+        emsg = f'Invalid load_type {loadtype} for {thisfunc}. Specify one of {ltstr}'
+        raise UserWarning(emsg)
+
+    if not (loadtype == 'none'):
+        reqd_keys = ['load_tag', 'load_seg_start']
+        _check_kwarg_keys(thisfunc, reqd_keys,
+                          kwargs, 'keyword arguments')
+
+    if ('load_seg_start' in kwargs.keys()) and (not ('load_seg_end' in kwargs.keys())):
+        kwargs['load_seg_end'] = kwargs['load_seg_start']
+
+    rlc_idx = [4, 5, 6]
+    # --- Check distributed loads and assign to positional args ---
+    if loadtype in ['series_dist', 'parallel_dist']:
+        possible_args = ['R_per_meter', 'L_per_meter', 'C_per_meter']
+
+    # --- Check lumped loads and assign to positional args
+    elif loadtype in ['series_RLC_lump', 'parallel_RLC_lump']:
+        possible_args = ['R', 'L', 'C']
+
+    # --- Check wire conductivity ---
+    elif loadtype == 'wire_conductivity':
+        possible_args = ['wire_sigma']
+
+    elif loadtype == 'load_Z':
+        possible_args = ['R', 'X']
+
+    elif loadtype == 'none':
+        possible_args = []
+
+    _check_minimum_keys(thisfunc, possible_args,
+                        kwargs, f'for load type {loadtype}')
+    # --- populate args[4], args[5], and args[6] with appropriate values
+    # --- based on possible_args logic above
+    for ldargkey, ix in zip(possible_args, rlc_idx):
+        if ldargkey in kwargs.keys():
+            args[ix] = float(kwargs[ldargkey])
+
+    if loadtype == 'none':
+        args[0] = load_types[loadtype]
+    else:
+        args[0] = load_types[loadtype]
+        args[1] = kwargs['load_tag']
+        args[2] = kwargs['load_seg_start']
+        args[3] = kwargs['load_seg_end']
+
+    return args
+
+def pack_nearfield_card_args(coord_system=None, **kwargs):
+    '''
+    Takes named load parameters as keyword args and returns
+    a list of arguments for the .ne_card() and .nh_card() methods of
+    a PyNEC NEC context.
+
+    https://www.nec2.org/part_3/cards/ne.html
+
+    coord_system: 
+      'rectangular' or 'spherical' 
+
+    Specify number of points, starting coordinates, and step increments: 
+
+    if rectangular: 
+        nx, ny, nz, x0, y0, z0, delx, dely, delz
+    if spherical:
+        nr, nphi, ntheta, r0, phi0, theta0, delr, delphi, deltheta
+    '''
+    thisfunc = 'pack_nearfield_card_args()'
+    allowed_csys = ['rectangular', 'spherical']
+
+    if coord_system not in allowed_csys:
+        emsg = f'{thisfunc} requires coord_system from {allowed_csys}, not {coord_system}'
+        raise UserWarning(emsg)
+
+    if coord_system == 'rectangular':
+        nfargs = ['nx', 'ny', 'nz', 'x0', 'y0', 'z0', 'delx', 'dely', 'delz']
+        nf_flag = 0
+    elif coord_system == 'spherical':
+        nfargs = ['nr', 'nphi', 'ntheta', 'r0', 'phi0', 'theta0', 'delr','delphi','deltheta']
+        nf_flag = 1
+
+    _check_kwarg_keys(thisfunc, nfargs, kwargs, f'arguments for {coord_system} coordinates')
+    
+    args = [nf_flag]+[kwargs[var] for var in nfargs]
+    return args
+
+
+def _check_kwarg_keys(caller, required_keys, kwargs, where):
+    '''
+    Checks for required argument names in kwargs.keys()
+    Raises an error including caller name of the form
+
+    <caller> is missing <missing keys> in <where>
+    <where> could be something like "arguments"
+    '''
+    missing_keys = [key for key in required_keys if not key in kwargs.keys()]
+
+    if missing_keys:
+        emsg = f'ERROR: {caller} is missing {missing_keys} in {where}'
+        print(emsg)
+        raise UserWarning(emsg)
+
+
+def _check_minimum_keys(caller, possible_keys, kwargs, why):
+    '''
+    Checks to see at least one of the possible keys is present in kwargs.keys()
+
+    Raises an error including caller name of the form
+    <caller> needs at least one of <possible keys> <why>
+    '''
+    present_keys = [key for key in possible_keys if key in kwargs.keys()]
+    if (not present_keys) and possible_keys:
+        emsg = f'ERROR: {caller} needs at least one of {possible_keys} {why}'
+        print(emsg)
+        raise UserWarning(emsg)
+    return present_keys
+
+
 class WireInput(object):
     '''
     A Jupyter notebook wire input GUI for PyNEC
@@ -570,15 +727,17 @@ class WireInput(object):
         return wiredicts
 
 # === Below we collect some functions for manipulating the geometry of wire dictionaries. ===
+
+
 def rotate_wiredict(wd, thetadeg, axis, inplace=False):
     """
     Rotates a dictionary wd with points
     xw1, yw1, zw1 and xw2, yw2, zw2 
     about the specified axis 'x', 'y', or 'z'
     through an angle thetadeg in degrees.
-    
+
     If inplace is set to False, a copy is returned.
-    
+
     https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
     """
     theta = np.pi/180.0*thetadeg
@@ -594,16 +753,18 @@ def rotate_wiredict(wd, thetadeg, axis, inplace=False):
         R = np.array([[np.cos(theta), -np.sin(theta), 0],
                       [np.sin(theta), np.cos(theta), 0],
                       [0, 0, 1]])
-    
+
     if not inplace:
         wd = wd.copy()
-    
+
     p1 = (wd['xw1'], wd['yw1'], wd['zw1'])
     p2 = (wd['xw2'], wd['yw2'], wd['zw2'])
-    
-    wd['xw1'], wd['yw1'], wd['zw1'] = R@p1 #@ is Python 3 shortcut for np.matmul()
-    wd['xw2'], wd['yw2'], wd['zw2'] = R@p2 
+
+    # @ is Python 3 shortcut for np.matmul()
+    wd['xw1'], wd['yw1'], wd['zw1'] = R@p1
+    wd['xw2'], wd['yw2'], wd['zw2'] = R@p2
     return wd
+
 
 def translate_wiredict(wd, amount, axis, inplace=False):
     """
@@ -613,7 +774,7 @@ def translate_wiredict(wd, amount, axis, inplace=False):
     """
     if not inplace:
         wd = wd.copy()
-    
+
     if axis == 'x':
         wd['xw1'] += amount
         wd['xw2'] += amount
@@ -623,15 +784,16 @@ def translate_wiredict(wd, amount, axis, inplace=False):
     elif axis == 'z':
         wd['zw1'] += amount
         wd['zw2'] += amount
-    
+
     return wd
+
 
 def get_wire_points(wd):
     """
     Returns 
     p1 = (xw1, yw1, zw1)
     p2 = (xw2, yw2, zw2)
-    
+
     from a wire dictionary
     """
     p1 = np.asarray([wd['xw1'], wd['yw1'], wd['zw1']])
