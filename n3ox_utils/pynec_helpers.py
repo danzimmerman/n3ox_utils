@@ -601,15 +601,17 @@ class WireInput(object):
         and amount in interface.
         '''
         amount = self.translation_amount_box.value
-        dir = self.translate_direction_selector.value
-        self.translate_wires(amount, dir)
+        directstr = self.translate_direction_selector.value
+        self.translate_wires(amount, directstr)
 
-    def translate_wires(self, amount, direction):
+    def translate_wires(self, amount, direction_string):
         '''
         External function to translate wires
         '''
-        #print(amount, directison)
-        tags = [direction+'w1', direction+'w2']
+        if not direction_string in ['x', 'y', 'z']:
+            raise UserWarning("Invalid value for 'direction_string'. Valid directions are 'x', 'y', and 'z'")
+
+        tags = [direction_string+'w1',direction_string+'w2']
         for wire in self.wires:
             for child in wire.children:
                 if child.argid in tags:
