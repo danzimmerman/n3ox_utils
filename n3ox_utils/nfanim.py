@@ -21,7 +21,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 import numpy as np
-import PyNEC
+#import PyNEC
 import json
 import matplotlib.pyplot as mplt
 import n3ox_utils.plot_tools as pltools
