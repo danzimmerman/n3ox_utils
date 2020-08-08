@@ -14,7 +14,7 @@ named-variable interface to the most common PyNEC things I use.
 '''
 import ipywidgets
 from IPython.display import display
-import urllib3 as urllib
+import urllib.request as urlrq
 import numpy as np
 
 
@@ -488,13 +488,13 @@ class WireInput(object):
 
     def import_EZNEC_wires_from_URL(self, ezurl):
         '''
-        Uses urllib to open a wire description output from EZNEC.
+        Uses urllib.request (as urlrq) to open a wire description output from EZNEC.
 
         Parses the units line and converts to meters.
         '''
         # --- Check the file for units line and select number of header lines ---
 
-        with urllib.request.urlopen(ezurl) as urf:
+        with urlrq.urlopen(ezurl) as urf:
             bytesdata = urf.readlines()
 
         desc = [line.decode('UTF-8') for line in bytesdata]
@@ -502,7 +502,7 @@ class WireInput(object):
         EZNEC_in_line = [line.count('EZNEC') for line in desc]
         NH = EZNEC_in_line.index(True)+8
         if not NH == 8:
-            uestr = 'Found units line {0} as first line. Not yet implemented.'
+            uestr = 'import_EZNEC_wires_from_URL() found units line "{0}" as first line. Not yet implemented.'
             raise NotImplementedError(uestr.format(desc[0]))
 
         pipesepdata = ['|'.join(line.split()).replace(',|', ',')  # EZNEC files have mix of variable spacing and comma seperated, replace with pipes
