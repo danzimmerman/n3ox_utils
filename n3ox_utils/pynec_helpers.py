@@ -14,7 +14,7 @@ named-variable interface to the most common PyNEC things I use.
 '''
 import ipywidgets
 from IPython.display import display
-import urllib
+import urllib3 as urllib
 import numpy as np
 
 
