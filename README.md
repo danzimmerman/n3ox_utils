@@ -12,12 +12,7 @@ This is a personal package of Python utilities for antennas and transmission lin
  Implements the same transmission line calculations as [Owen Duffy's Transmission Line Calculator](https://owenduffy.net/transmissionline/concept/mptl.htm) for use in Jupyter notebooks and other Python scripts.
 
  * `plot_tools`
- General matplotlib pyplot setup as well as antenna pattern polar plotting in ARRL style.
-
-From [this PDF](http://www.arrl.org/files/file/ARRL%20Handbook%20Supplemental%20Files/2018%20Edition/Radio%20Supplement.pdf)
- _The modified logarithmic grid used by the ARRL has a system of
-concentric grid lines spaced according to the logarithm of 0.89 times
-the value of the signal voltage._
+ General matplotlib pyplot setup as well as ARRL-style pattern polar plots ([PDF](http://www.arrl.org/files/file/ARRL%20Handbook%20Supplemental%20Files/2018%20Edition/Radio%20Supplement.pdf))
 
  * `pynec_helpers`: Wire input GUI and other helper utilities for working with [`PyNEC`](https://github.com/tmolteno/python-necpp/tree/master/PyNEC)
 
