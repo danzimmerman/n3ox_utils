@@ -486,7 +486,7 @@ class WireInput(object):
         self.add_wire_row()
         # self.show() # this doesn't always work, so let's make it manual for now
 
-    def import_EZNEC_wires_from_URL(self, ezurl):
+    def import_EZNEC_wires_from_URL(self, ezurl, round=None):
         '''
         Uses urllib.request (as urlrq) to open a wire description output from EZNEC.
 
@@ -522,8 +522,12 @@ class WireInput(object):
                                 'yw2', 'zw2', 'rad', 'segment_count',
                                 'dielc', 'dielthk']
         # --- TODO: change transformers based on wire units --- probably make a dict of transformers ---
-        self.EZNEC_xformers = [int]+[float]*6 + [lambda num: float(num)/2000]
-        self.EZNEC_xformers += [int, float, lambda num: float(num)/1000]
+        if round:
+            floatfn = lambda x: np.round(float(x), decimals=round)
+        else:
+            floatfn = float
+        self.EZNEC_xformers = [int]+[floatfn]*6 + [lambda num: floatfn(num)/2000]
+        self.EZNEC_xformers += [int, floatfn, lambda num: floatfn(num)/1000]
 
         # --- Use transformations to build a wire dictionary from EZNEC input data ---
         wiredicts = []
