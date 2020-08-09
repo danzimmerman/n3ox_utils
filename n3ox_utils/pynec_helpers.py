@@ -486,6 +486,19 @@ class WireInput(object):
         self.add_wire_row()
         # self.show() # this doesn't always work, so let's make it manual for now
 
+    def get_EZNEC_wirestr(self, round=None):
+        '''
+        Writes out a string that can be imported into EZNEC.
+        '''
+        wirefields = [f'{c}w1' for c in 'xyz']+[f'{c}w2' for c in 'xyz']+['rad']
+        row_fmt_str = ', '.join(['{'+f'{wf}:14.12f'+'}' for wf in wirefields])
+        ezwstr = 'm m\n'
+        wiredicts = self.return_wire_dicts()
+        for wd in wiredicts:
+            ezwstr += row_fmt_str.format(**wd)
+            ezwstr += '\n'
+        return ezwstr
+
     def import_EZNEC_wires_from_URL(self, ezurl, round=None):
         '''
         Uses urllib.request (as urlrq) to open a wire description output from EZNEC.
