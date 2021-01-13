@@ -1,9 +1,0 @@
-{
-    "python.testing.pytestArgs": [
-        "n3ox_utils"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.testing.pytestPath": "C:\\users\\dan\\anaconda3\\envs\\main\\Scripts\\pytest"
-}
