@@ -490,11 +490,12 @@ class WireInput(object):
         '''
         Writes out a string that can be imported into EZNEC.
         '''
-        wirefields = [f'{c}w1' for c in 'xyz']+[f'{c}w2' for c in 'xyz']+['rad']
+        wirefields = [f'{c}w1' for c in 'xyz']+[f'{c}w2' for c in 'xyz']+['diam']
         row_fmt_str = ', '.join(['{'+f'{wf}:14.12f'+'}' for wf in wirefields])
-        ezwstr = 'm m\n'
+        ezwstr = 'm mm\n'
         wiredicts = self.return_wire_dicts()
         for wd in wiredicts:
+            wd['diam'] = 2000*wd['rad']
             ezwstr += row_fmt_str.format(**wd)
             ezwstr += '\n'
         return ezwstr
@@ -519,13 +520,15 @@ class WireInput(object):
             raise NotImplementedError(uestr.format(desc[0]))
 
         pipesepdata = ['|'.join(line.split()).replace(',|', ',')  # EZNEC files have mix of variable spacing and comma seperated, replace with pipes
-                       for line in desc[NH:]]
+                       for line in desc[NH:] if not line.isspace()]
         wiredata = []
         # --- The wire coordinates are still comma separated, split those up too ---
         for entry in pipesepdata:
-            # drop wire connectivity like W1E2, etc
+            # drop wire connectivity like W1E2, GND etc
+            #print(entry.split('|'))
             wire_line_temp = [d.split(',')
-                              for d in entry.split('|') if not d.count('W')]
+                              for d in entry.split('|') if not (d.count('W') or d.count('G'))]
+            #print("\t->", wire_line_temp)
             wire_entry_unpacked = []
             for wdlist in wire_line_temp:  # unpack the wire coordinates and other data into individual entries in wdlist
                 wire_entry_unpacked.extend(wdlist)
@@ -536,7 +539,7 @@ class WireInput(object):
                                 'dielc', 'dielthk']
         # --- TODO: change transformers based on wire units --- probably make a dict of transformers ---
         if round:
-            floatfn = lambda x: np.round(float(x), decimals=round)
+            floatfn = lambda s: np.round(float(s), decimals=round)
         else:
             floatfn = float
         self.EZNEC_xformers = [int]+[floatfn]*6 + [lambda num: floatfn(num)/2000]
